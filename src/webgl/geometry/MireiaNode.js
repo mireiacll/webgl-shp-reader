@@ -8,6 +8,7 @@ export class MireiaNode{
     #drawMode;
     #vertices;
     #texture;
+    #bLighting;
 
     constructor(meshes=[],tMat=new MireiaMat4(),drawMode='TRIANGLES',texture=null){
         this.#meshes=meshes;
@@ -17,7 +18,11 @@ export class MireiaNode{
         this.#drawMode=drawMode;
         this.#vertices=[];
         this.#texture=texture;
+        this.#bLighting=true;
     }
+
+    getLighting(){return this.#bLighting;}
+    setLighting(bLighting){this.#bLighting=bLighting;}
 
     getMeshes() { return this.#meshes; }
     setMeshes(meshes) { this.#meshes = meshes; }
@@ -83,14 +88,14 @@ export class MireiaNode{
         return resultIndices;
     }
 
-    updatePreCumputedtMat(parenttMat=null){
+    updatePreComputedMat(parenttMat=null){
         const locattMat = this.#tMat.getMatrix();
         this.#preMultipliedtMat = parenttMat
             ? MireiaMat4.multiplyArrays(parenttMat, locattMat)
             : locattMat;
 
         for (const child of this.#children){
-            child.updatePreCumputedtMat(this.#preMultipliedtMat);
+            child.updatePreComputedMat(this.#preMultipliedtMat);
         }
 }
 
@@ -110,6 +115,6 @@ export class MireiaNode{
         for (const node of nodes) {
             main.addObject(node);
         }
-        main.addUpdateCallback(() => this.updatePreCumputedtMat());
+        main.addUpdateCallback(() => this.updatePreComputedMat());
     }
 }

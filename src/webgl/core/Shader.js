@@ -9,6 +9,7 @@ export class Shader {
   #texCoordLoc;
   #normalLoc;
   #matrixLoc;
+  #modelViewMatrixLoc;
   #textureLoc;
   #useTextureLoc;
   #lightDirectionLoc;
@@ -28,6 +29,7 @@ export class Shader {
     this.#texCoordLoc = gl.getAttribLocation(this.#program, 'a_texCoord');
     this.#normalLoc = gl.getAttribLocation(this.#program, 'a_normal');
     this.#matrixLoc = gl.getUniformLocation(this.#program, 'u_matrix');
+    this.#modelViewMatrixLoc = gl.getUniformLocation(this.#program, 'u_modelViewMatrix');
     this.#textureLoc = gl.getUniformLocation(this.#program, 'u_texture');
     this.#useTextureLoc = gl.getUniformLocation(this.#program, 'u_useTexture');
     this.#lightDirectionLoc = gl.getUniformLocation(this.#program, 'u_lightDirection');
@@ -73,6 +75,7 @@ export class Shader {
   getTexCoordLoc() { return this.#texCoordLoc; }
   getNormalLoc() { return this.#normalLoc; }
   getMatrixLoc() { return this.#matrixLoc; }
+  getModelViewMatrixLoc() { return this.#modelViewMatrixLoc; }
   getTextureLoc() { return this.#textureLoc; }
   getUseTextureLoc() { return this.#useTextureLoc; }
   getLightDirectionLoc() { return this.#lightDirectionLoc; }

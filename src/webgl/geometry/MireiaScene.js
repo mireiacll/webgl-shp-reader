@@ -18,7 +18,7 @@ export class MireiaScene{
         return this.#rootNode.getRenderableNodes();
     }
 
-    updatePreCumputedtMat() {
-        this.#rootNode.updatePreCumputedtMat();
+    updatePreComputedMat() {
+        this.#rootNode.updatePreComputedMat();
     }
 }

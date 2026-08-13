@@ -26,5 +26,5 @@ export class MireiaMergedNode {
     }
 
     getRenderableNodes() { return [this]; }
-    updatePreCumputedtMat() {}
+    updatePreComputedMat() {}
 }

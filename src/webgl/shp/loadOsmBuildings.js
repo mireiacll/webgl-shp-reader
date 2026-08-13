@@ -14,7 +14,7 @@ import { MireiaColor4 } from "../math/MireiaColor4.js";
 
 const GRID_DIVISIONS = 8;
 
-export async function loadOsmBuildings(main, baseUrl, { color = new MireiaColor4(0.7, 0.7, 0.75, 1), nearPoint = null, // { centerLon, centerLat, radiusMeters }
+export async function loadOsmBuildings(main, baseUrl, { color = new MireiaColor4(0.7, 0.7, 0.75, 1), nearPoint = null, skipBuildings = false  // { centerLon, centerLat, radiusMeters }
 } = {}) {
     //console.log(`[loadOsmBuildings] fetching ${baseUrl}.shp and ${baseUrl}.dbf`);
 
@@ -150,7 +150,9 @@ export async function loadOsmBuildings(main, baseUrl, { color = new MireiaColor4
             sceneMaxZ = Math.max(sceneMaxZ, localMaxZ);
 
             if (verts.length > 0) {
-                buckets[cellIndex].push(extruded.getScene().getRoot());
+                if (!skipBuildings) {
+                    buckets[cellIndex].push(extruded.getScene().getRoot());
+                }
                 built.push(extruded);
             }
 
@@ -191,7 +193,8 @@ export async function loadOsmBuildings(main, baseUrl, { color = new MireiaColor4
         const dist = radius * 2.5; // pull back enough to frame the whole span
 
         // reposition camera to actually look at the scene center
-        cam.setPosition(new MireiaVec3(sceneCenterX, sceneCenterY - dist, sceneCenterZ + dist * 0.4));
+        //cam.setPosition(new MireiaVec3(sceneCenterX, sceneCenterY - dist, sceneCenterZ + dist * 0.4));
+        cam.setPosition(new MireiaVec3(-50, -50, 50));
         const dir = new MireiaVec3(0, dist, -dist * 0.4).normalize();
         cam.setCamDir(dir);
 
@@ -202,9 +205,11 @@ export async function loadOsmBuildings(main, baseUrl, { color = new MireiaColor4
 
         // now far plane, computed from the NEW position, actually matches what's needed
         const farPlane = dist * 3 + Math.max(spanX, spanY) ;
-        cam.setNear(Math.max(0.1, dist * 0.01));
-        cam.setFar(farPlane);
+        //cam.setNear(Math.max(0.1, dist * 0.01));
+        cam.setNear(0.1)
+        //cam.setFar(farPlane);
 
+        cam.setFar(4000);
         console.log('[loadOsmBuildings] framed camera at', cam.getPosition(), 'far:', farPlane);
     }
 

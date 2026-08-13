@@ -30,6 +30,18 @@ export class MireiaVec3 {
         return this.#x * other.getX() + this.#y * other.getY() + this.#z * other.getZ();
     }
 
+    distance2D(other) {
+        const dx = this.#x - other.getX();
+        const dy = this.#y - other.getY();
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    squaredDistance2D(other) {
+        const dx = this.#x - other.getX();
+        const dy = this.#y - other.getY();
+        return dx * dx + dy * dy;
+    }
+
     // Returns a new unit-length vector pointing the same direction as this one.
     // Falls back to (0,0,-1) if this vector has zero length (can't normalize a zero vector).
     normalize() {

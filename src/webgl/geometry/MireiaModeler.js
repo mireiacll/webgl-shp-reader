@@ -64,9 +64,9 @@ export class MireiaModeler{
         return new MireiaModeler(primitive);
     }
 
-    static #addSurface(groupPoints,primitive,color,z,reversed){
+    static #addSurface(groupPoints,primitive,color,heightOffset,reversed){
         const surface = new MireiaSurface();
-        const vertices = groupPoints.map(p => new MireiaVertex(new MireiaVec3(p.getX(), p.getY(), z), color));
+        const vertices = groupPoints.map(p => new MireiaVertex(new MireiaVec3(p.getX(), p.getY(), (p.getZ?.() ?? 0) + heightOffset), color));
 
         for (let i = 1; i <= vertices.length - 2; i++) {
             const v0 = vertices[0];
@@ -95,11 +95,14 @@ export class MireiaModeler{
             const j = (i + 1) % n;
             const p0 = points[i];
             const p1 = points[j];
+            const z0 = p0.getZ?.() ?? 0;
+            const z1 = p1.getZ?.() ?? 0;
  
-            const vBottom0 = new MireiaVertex(new MireiaVec3(p0.getX(), p0.getY(), 0), color);
-            const vBottom1 = new MireiaVertex(new MireiaVec3(p1.getX(), p1.getY(), 0), color);
-            const vTop0 = new MireiaVertex(new MireiaVec3(p0.getX(), p0.getY(), height), color);
-            const vTop1 = new MireiaVertex(new MireiaVec3(p1.getX(), p1.getY(), height), color);
+            const vBottom0 = new MireiaVertex(new MireiaVec3(p0.getX(), p0.getY(), z0), color);
+            const vBottom1 = new MireiaVertex(new MireiaVec3(p1.getX(), p1.getY(), z1), color);
+            const vTop0 = new MireiaVertex(new MireiaVec3(p0.getX(), p0.getY(), z0 + height), color);
+            const vTop1 = new MireiaVertex(new MireiaVec3(p1.getX(), p1.getY(), z1 + height), color);
+
  
             createFace(vBottom0, vBottom1, vTop1, vTop0, primitive);
         }

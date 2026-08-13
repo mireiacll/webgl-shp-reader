@@ -35,15 +35,87 @@ export class ScreenSpace {
     return new MireiaVec3(worldX / worldW, worldY / worldW, worldZ / worldW);
   }
 
+  static transformHomogeneous(matrix, x, y, z, w) {
+    const m = matrix;
+    return {
+      x: m[0]*x + m[4]*y + m[8]*z  + m[12]*w,
+      y: m[1]*x + m[5]*y + m[9]*z  + m[13]*w,
+      z: m[2]*x + m[6]*y + m[10]*z + m[14]*w,
+      w: m[3]*x + m[7]*y + m[11]*z + m[15]*w,
+    };
+  }
+
+  static unprojectSeparate(ndcX, ndcY, ndcZ, inverseProjection, inverseView) {
+    // step 1: undo the projection -> view-space position
+    const viewSpace = ScreenSpace.transformHomogeneous(inverseProjection, ndcX, ndcY, ndcZ, 1);
+    if (viewSpace.w === 0) return null;
+    const vx = viewSpace.x / viewSpace.w;
+    const vy = viewSpace.y / viewSpace.w;
+    const vz = viewSpace.z / viewSpace.w;
+ 
+    // step 2: undo the view -> world-space position
+    const worldSpace = ScreenSpace.transformHomogeneous(inverseView, vx, vy, vz, 1);
+    if (worldSpace.w === 0) return null;
+ 
+    return new MireiaVec3(worldSpace.x / worldSpace.w, worldSpace.y / worldSpace.w, worldSpace.z / worldSpace.w);
+  }
+
   // Full convenience pipeline: screen pixel + normalized depth + view-projection
   // matrix -> world position. Returns null if the matrix isn't invertible.
-  static screenToWorld(screenX, screenY, normalizedDepth, canvasWidth, canvasHeight, near, far, viewProjection) {
+  // static screenToWorld(screenX, screenY, normalizedDepth, canvasWidth, canvasHeight, near, far, viewProjection) {
+  //   const { ndcX, ndcY } = ScreenSpace.screenToNdc(screenX, screenY, canvasWidth, canvasHeight);
+  //   const ndcZ = ScreenSpace.depthToNdcZ(normalizedDepth, near, far);
+
+  //   const inverseVP = MireiaMat4.invertArray(viewProjection);
+  //   if (!inverseVP) return null;
+
+  //   return ScreenSpace.unproject(ndcX, ndcY, ndcZ, inverseVP);
+  // }
+  // static screenToWorld(screenX, screenY, normalizedDepth, canvasWidth, canvasHeight, near, far, projection, view) {
+  //   const { ndcX, ndcY } = ScreenSpace.screenToNdc(screenX, screenY, canvasWidth, canvasHeight);
+  //   const ndcZ = ScreenSpace.depthToNdcZ(normalizedDepth, near, far);
+
+  //   const inverseProjection = MireiaMat4.invertArray(projection);
+  //   const inverseView = MireiaMat4.invertArray(view);
+  //   if (!inverseProjection || !inverseView) return null;
+ 
+  //   return ScreenSpace.unprojectSeparate(ndcX, ndcY, ndcZ, inverseProjection, inverseView);
+  // }
+
+  static screenToWorldRay(screenX, screenY, normalizedDepth, canvasWidth, canvasHeight, near, far, fov, view, camera) {
     const { ndcX, ndcY } = ScreenSpace.screenToNdc(screenX, screenY, canvasWidth, canvasHeight);
-    const ndcZ = ScreenSpace.depthToNdcZ(normalizedDepth, near, far);
+ 
+    const f = 1 / Math.tan(fov / 2);
+    const aspect = canvasWidth / canvasHeight;
+ 
+    const linearDepth = normalizedDepth * (far - near) + near;
+ 
+    // reconstruct the view-space position
+    const viewX = ndcX * linearDepth * aspect / f;
+    const viewY = ndcY * linearDepth / f;
+    const viewZ = -linearDepth; // camera looks -Z 
+ 
+    const camTMat = camera.getCameraTransformMatrix();
+    const camTMatInv = MireiaMat4.invertArray(camTMat);
+    const camRot4 = camera.getCameraRotationMatrix4();
 
-    const inverseVP = MireiaMat4.invertArray(viewProjection);
-    if (!inverseVP) return null;
+    const inverseView = MireiaMat4.invertArray(view);
+    if (!inverseView) return null;
+ 
+    const worldSpace = ScreenSpace.transformHomogeneous(inverseView, viewX, viewY, viewZ, 1);
 
-    return ScreenSpace.unproject(ndcX, ndcY, ndcZ, inverseVP);
+    const worldSpace2 = ScreenSpace.transformHomogeneous(camRot4, viewX, viewY, viewZ, 1);
+    const camPos = camera.getPosition();
+    const worldSpace3 = [worldSpace2.x+camPos.getX(), worldSpace2.y+camPos.getY(), worldSpace2.z+camPos.getZ()];
+
+    if (worldSpace.w === 0) return null;
+ 
+    //return new MireiaVec3(worldSpace.x / worldSpace.w, worldSpace.y / worldSpace.w, worldSpace.z / worldSpace.w);
+    return new MireiaVec3(worldSpace3[0], worldSpace3[1], worldSpace3[2]);
   }
+ 
+  static screenToWorld(screenX, screenY, normalizedDepth, canvasWidth, canvasHeight, near, far, fov, view, camera) {
+    return ScreenSpace.screenToWorldRay(screenX, screenY, normalizedDepth, canvasWidth, canvasHeight, near, far, fov, view, camera);
+  }
+
 }

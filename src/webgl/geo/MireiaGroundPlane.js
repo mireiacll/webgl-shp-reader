@@ -44,7 +44,7 @@ export class MireiaGroundPlane {
     getScene() { return this.#scene; }
     getVertices() { return this.#primitive.getVertices(); }
 
-    static async build(globe, dataBbox, gl, { urlTemplate, elevation = -0.01 } = {}) {
+    static async build(globe, dataBbox, gl, { urlTemplate, elevation = 0 } = {}) {
         const { canvas, coveredBbox } = await MireiaTileMosaic.build(dataBbox, { urlTemplate });
 
         const cornersLonLat = [
@@ -53,7 +53,10 @@ export class MireiaGroundPlane {
             new MireiaVec2(coveredBbox.getMaxX(), coveredBbox.getMaxY()), // NE
             new MireiaVec2(coveredBbox.getMinX(), coveredBbox.getMaxY()), // NW
         ];
-        const [sw, se, ne, nw] = globe.recenterRing(cornersLonLat);
+        //const [sw, se, ne, nw] = globe.recenterRing(cornersLonLat);
+
+        const width = 100;
+        const [sw, se, ne, nw] = [new MireiaVec2(-width,-width),new MireiaVec2(width,-width),new MireiaVec2(width,width),new MireiaVec2(-width,width)]
 
         return new MireiaGroundPlane({ sw, se, ne, nw }, elevation, gl, canvas);
     }

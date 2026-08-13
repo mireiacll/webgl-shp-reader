@@ -7,8 +7,9 @@ import { ScreenRenderer } from './core/ScreenRenderer.js';
 import { MireiaMat4 } from './math/MireiaMat4.js';
 import { ScreenSpace } from './core/ScreenSpace.js';
 
+const fov = Math.PI / 3;
+
 function createProjectionMatrix(aspect, near, far) {
-  const fov = Math.PI / 3;
   const f = 1 / Math.tan(fov / 2);
 
   return new Float32Array([
@@ -31,18 +32,22 @@ export class Main {
   #lastWidth;
   #lastHeight;
   #lastViewProjection;
+  #lastView;
+  #lastProjection;
   #displayMode;
+  #overlayScenes;
 
   constructor(canvas) {
     this.#gl = canvas.getContext('webgl2');
     this.#scenes = [];
+    this.#overlayScenes = [];
     const initialPitch = -0.3;
     this.#camera = new Camera(
       new MireiaVec3(0, -8, 3),
       new MireiaVec3(0, Math.cos(initialPitch), Math.sin(initialPitch)),
       new MireiaVec3(0, 0, 1),
-      0.1,
-      1000000
+      1,
+      1000
     );
     this.#renderer = new Renderer(this.#gl, this.#camera.getNear(), this.#camera.getFar());
     this.#cameraController = new CameraController(this.#camera, canvas);
@@ -53,7 +58,8 @@ export class Main {
     this.#fbo = new MireiaFBO(this.#gl, canvas.width, canvas.height);
     this.#screenRenderer = new ScreenRenderer(this.#gl);
     this.#lastViewProjection = null;
-
+    this.#lastProjection = null;
+    this.#lastView = null;
     this.#displayMode = 'color';
   }
 
@@ -72,11 +78,20 @@ export class Main {
       this.#scenes = [];
     }
     this.#scenes.push(scene);
-    this.#updateCallbacks.push(() => scene.updatePreCumputedtMat());
+    this.#updateCallbacks.push(() => scene.updatePreComputedMat());
+  }
+
+  addOverlayScene(scene) {
+    if (this.#overlayScenes === undefined) {
+      this.#overlayScenes = [];
+    }
+    this.#overlayScenes.push(scene);
+    this.#updateCallbacks.push(() => scene.updatePreComputedMat());
   }
 
   removeScene(scene) {
     this.#scenes = this.#scenes.filter(s => s !== scene);
+    this.#overlayScenes = this.#overlayScenes.filter(s => s !== scene);
   }
 
   addUpdateCallback(callback) {
@@ -86,10 +101,12 @@ export class Main {
   // Converts a clicked screen pixel + its stored depth into a real 3D world position.
   getWorldPositionAt(screenX, screenY) {
     const gl = this.#gl;
-    if (!this.#lastViewProjection) return null;
+    //if (!this.#lastViewProjection) return null;
+    //if (!this.#lastProjection || !this.#lastView) return null;
+    if (!this.#lastView) return null;
 
     const normalizedDepth = this.#fbo.readDepthAt(screenX, screenY);
-
+    
     return ScreenSpace.screenToWorld(
       screenX,
       screenY,
@@ -98,7 +115,11 @@ export class Main {
       gl.canvas.height,
       this.#camera.getNear(),
       this.#camera.getFar(),
-      this.#lastViewProjection
+      //this.#lastViewProjection
+      //this.#lastProjection, 
+      fov,
+      this.#lastView,
+      this.#camera,
     );
   }
 
@@ -143,18 +164,32 @@ export class Main {
       const aspect = gl.canvas.width / gl.canvas.height;
       const projection = createProjectionMatrix(aspect, this.#camera.getNear(), this.#camera.getFar());
       const view = this.#camera.getViewMatrix();
+      this.#lastProjection = projection; 
+      this.#lastView = view;
       const viewProjection = MireiaMat4.multiplyArrays(projection, view);
       this.#lastViewProjection = viewProjection;
 
       // PASS 1: render the scene into the FBO
       this.#fbo.bind();
       gl.enable(gl.DEPTH_TEST);
+      gl.depthFunc(gl.LESS); // added
       gl.clearColor(1, 1, 1, 1);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
       for (const scene of this.#scenes) {
-        this.#renderer.render(scene, viewProjection, this.#camera.getNear(), this.#camera.getFar());
+        this.#renderer.render(scene, viewProjection, this.#camera.getNear(), this.#camera.getFar(), this.#camera.getViewMatrix());
       }
+
+      if (this.#overlayScenes.length > 0) {
+        gl.disable(gl.DEPTH_TEST);
+        gl.depthMask(false);
+        for (const overlayScene of this.#overlayScenes) {
+          this.#renderer.render(overlayScene, viewProjection, this.#camera.getNear(), this.#camera.getFar(), this.#camera.getViewMatrix());
+        }
+        gl.depthMask(true);
+        gl.enable(gl.DEPTH_TEST);
+      }
+
       this.#fbo.unbind();
 
       // PASS 2: draw the FBO's texture to the screen, using its own dedicated shader

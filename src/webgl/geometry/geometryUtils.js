@@ -1,6 +1,13 @@
 import { MireiaTriangle } from './MireiaTriangle.js';
 import { MireiaSurface } from './MireiaSurface.js';
 import { MireiaRect2D } from './MireiaRect2D.js';
+import { MireiaSeg2D } from './MireiaSeg2D.js'
+
+import { MireiaColor4 } from '../math/MireiaColor4.js'; // adjust path if geometryUtils.js sits elsewhere
+import { MireiaPoints } from './MireiaPoints.js';
+import { MireiaLines } from './MireiaLines.js';
+import { MireiaLineStrip } from './MireiaLineStrip.js';
+import { MireiaLineLoop } from './MireiaLineLoop.js';
 
 // Builds a flat-shaded quad face from 4 vertices (v1,v2,v3,v4 in winding order)
 // and adds it as a new surface on the given primitive.
@@ -88,4 +95,61 @@ export function gridCellIndex(lon, lat, bbox, divisions) {
     col = Math.min(Math.max(col, 0), divisions - 1);
     row = Math.min(Math.max(row, 0), divisions - 1);
     return row * divisions + col;
+}
+
+export function buildShape(mode, points) {
+  switch (mode) {
+    case 'point':
+      return new MireiaPoints(points, new MireiaColor4(1, 0, 0, 1));
+    case 'line':
+      return new MireiaLines(points, new MireiaColor4(1, 1, 0, 1));
+    case 'lineStrip':
+      return new MireiaLineStrip(points, new MireiaColor4(0, 1, 1, 1));
+    case 'lineLoop':
+      return new MireiaLineLoop(points, new MireiaColor4(0, 1, 0, 1));
+    default:
+      return null;
+  }
+}
+
+export function segmentSelfIntersects(existingPoints, candidate) {
+  const n = existingPoints.length;
+  if (n < 2) return false;
+ 
+  const newSeg = new MireiaSeg2D(existingPoints[n - 1], candidate);
+  for (let i = 0; i < n - 2; i++) {
+    const edge = new MireiaSeg2D(existingPoints[i], existingPoints[i + 1]);
+    if (newSeg.getIntersectionType(edge) !== MireiaSeg2D.IntersectionType.NONE) {
+      return true;
+    }
+  }
+  return false;
+}
+ 
+export function closingEdgeSelfIntersects(points) {
+  const n = points.length;
+  if (n < 4) return false; // a triangle's closing edge can't cross anything else
+ 
+  const closingSeg = new MireiaSeg2D(points[n - 1], points[0]);
+  for (let i = 1; i < n - 2; i++) {
+    const edge = new MireiaSeg2D(points[i], points[i + 1]);
+    if (closingSeg.getIntersectionType(edge) !== MireiaSeg2D.IntersectionType.NONE) {
+      return true;
+    }
+  }
+  return false;
+}
+export function closingEdgeWouldIntersect(existingPoints, candidate) {
+  const n = existingPoints.length;
+  if (n < 3) return false; // not enough edges yet for this to be meaningful
+
+  const closingSeg = new MireiaSeg2D(candidate, existingPoints[0]);
+  // start at i=1: edge (0,1) is adjacent to the closing segment (shares point 0), skip it
+  for (let i = 1; i < n - 1; i++) {
+    const edge = new MireiaSeg2D(existingPoints[i], existingPoints[i + 1]);
+    if (closingSeg.getIntersectionType(edge) !== MireiaSeg2D.IntersectionType.NONE) {
+      return true;
+    }
+  }
+  return false;
 }

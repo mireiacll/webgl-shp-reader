@@ -69,4 +69,43 @@ export class Camera {
             1,
         ]);
     }
+
+    getCameraTransformMatrix(){
+        const f = this.getForward();
+        const r = this.getRight();
+        const u = this.getUp();
+        const p = this.#position;
+
+        // return new Float32Array([
+        //     r.getX(), r.getY(), r.getZ(), 0,
+        //     u.getX(), u.getY(), u.getZ(), 0,
+        //     -f.getX(), -f.getY(), -f.getZ(), 0,
+        //     p.getX(), p.getY(), p.getZ(), 1,
+        // ]);
+        return [
+            r.getX(), r.getY(), r.getZ(), 0,
+            u.getX(), u.getY(), u.getZ(), 0,
+            -f.getX(), -f.getY(), -f.getZ(), 0,
+            p.getX(), p.getY(), p.getZ(), 1,
+        ];
+    }
+
+    getCameraRotationMatrix4(){
+        const f = this.getForward();
+        const r = this.getRight();
+        const u = this.getUp();
+
+        // return new Float32Array([
+        //     r.getX(), r.getY(), r.getZ(), 0,
+        //     u.getX(), u.getY(), u.getZ(), 0,
+        //     -f.getX(), -f.getY(), -f.getZ(), 0,
+        //     0, 0, 0, 1,
+        // ]);
+        return [
+            r.getX(), r.getY(), r.getZ(), 0,
+            u.getX(), u.getY(), u.getZ(), 0,
+            -f.getX(), -f.getY(), -f.getZ(), 0,
+            0, 0, 0, 1,
+        ];
+    }
 }

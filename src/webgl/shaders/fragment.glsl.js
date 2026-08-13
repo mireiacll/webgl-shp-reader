@@ -1,8 +1,10 @@
 export const FRAGMENT_SHADER_SOURCE = `#version 300 es
-  precision mediump float;
+  precision highp float;
+  precision highp int;
   in vec4 v_color;
   in vec2 v_texCoord;
   in vec3 v_normal;
+  in vec4 ortoPos;
   uniform sampler2D u_texture;
   uniform float u_useTexture;
   uniform vec3 u_lightDirection;
@@ -53,8 +55,12 @@ export const FRAGMENT_SHADER_SOURCE = `#version 300 es
 
     outColor = vec4(finalColor, baseColor.a);
 
-    float ndcZ = gl_FragCoord.z * 2.0 - 1.0;
-    float linearDepth = (2.0 * u_near * u_far) / (u_far + u_near - ndcZ * (u_far - u_near));
+    float viewZ = ortoPos.z;
+    float linearDepth = - viewZ;
+    //float ndcZ = gl_FragCoord.z * 2.0 - 1.0;
+    //float ndcZ = ortoPos.z;
+    //float linearDepth = (2.0 * u_near * u_far) / (u_far + u_near - ndcZ * (u_far - u_near));
+    //float linearDepth = ortoPos.z;
     float normalizedDepth = (linearDepth - u_near) / (u_far - u_near);
     float invertedDepth = 1.0 - normalizedDepth; // near = 1.0 (white), far = 0.0 (black)
 

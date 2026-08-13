@@ -12,6 +12,7 @@ import { MireiaMesh } from "./MireiaMesh.js";
 import { MireiaNode } from "./MireiaNode.js";
 import { MireiaScene } from "./MireiaScene.js";
 import { ensureWinding, boundingBoxOf } from "./geometryUtils.js";
+import { MireiaColor4 } from "../math/MireiaColor4.js";
 
 export class MireiaPolygon {
 
@@ -35,7 +36,7 @@ export class MireiaPolygon {
             : this.#outerRing;
 
         const primitive = new MireiaPrimitive();
-        const cColor = color ?? new MireiaVec4(0.2, 0.5, 0.8, 1);
+        const cColor = color ?? new MireiaColor4(0.2, 0.5, 0.8, 1);
 
         const tessellator = new MireiaTessellator(this.#points);
         const convexPolygons = tessellator.tesselate();
@@ -140,7 +141,7 @@ export class MireiaPolygon {
 
     #addConvexSurface(points, primitive, color) {
         const surface = new MireiaSurface();
-        const vertices = points.map(p => new MireiaVertex(new MireiaVec3(p.getX(), p.getY(), 0), color));
+        const vertices = points.map(p => new MireiaVertex(new MireiaVec3(p.getX(), p.getY(),  p.getZ?.() ?? 0), color));
 
         for (let i = 1; i <= points.length - 2; i++) {
             const v0 = vertices[0];

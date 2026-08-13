@@ -42,6 +42,21 @@ export class MireiaFBO {
     return texture;
   }
 
+  #createDepthTexture(attachmentPoint) {
+    const gl = this.#gl;
+
+    const texture = gl.createTexture(); // new empty texture
+    gl.bindTexture(gl.TEXTURE_2D, texture); // makes it current texture
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.#width, this.#height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); // allocate gpu memory
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); // blend pixels if smaller or larger than real size
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); // clamp on edge
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, texture, 0); // use the texture as this attachment's output
+
+    return texture;
+  }
+
   // Creates the framebuffer plus its two color textures and depth renderbuffer
   #build() {
     const gl = this.#gl;
@@ -53,13 +68,13 @@ export class MireiaFBO {
     this.#colorBuffer = this.#createColorTexture(gl.COLOR_ATTACHMENT0);
 
     // color attachment 1: depth written out as a color
-    this.#depthColorBuffer = this.#createColorTexture(gl.COLOR_ATTACHMENT1);
+    this.#depthColorBuffer = this.#createDepthTexture(gl.COLOR_ATTACHMENT1);
 
     // color attachment 2: surface normal written out as a color (MRT), encoded via encodeNormal
-    this.#normalBuffer = this.#createColorTexture(gl.COLOR_ATTACHMENT2);
+    this.#normalBuffer = this.#createDepthTexture(gl.COLOR_ATTACHMENT2);
 
     // color attachment 3: each object's unique picking/selection color (MRT), written as-is
-    this.#selectionColorBuffer = this.#createColorTexture(gl.COLOR_ATTACHMENT3);
+    this.#selectionColorBuffer = this.#createDepthTexture(gl.COLOR_ATTACHMENT3);
 
     // tells WebGL both attachments are active outputs 
     gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1, gl.COLOR_ATTACHMENT2, gl.COLOR_ATTACHMENT3]);
@@ -67,7 +82,7 @@ export class MireiaFBO {
     // depth attachment
     this.#depthBuffer = gl.createRenderbuffer(); // new renderbuffer (simpler kind of storage)
     gl.bindRenderbuffer(gl.RENDERBUFFER, this.#depthBuffer); //   scurrent buffer
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.#width, this.#height); // allocates depth values, same wiodth/height as color texture
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT32F, this.#width, this.#height); // allocates depth values, same wiodth/height as color texture
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.#depthBuffer); //   framebuffer has both a place to store color AND a place to store depth
     // validation
     const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);

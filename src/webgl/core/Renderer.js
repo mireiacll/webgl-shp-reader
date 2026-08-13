@@ -48,17 +48,17 @@ export class Renderer {
     };
   }
 
-  render(scene, matrix, near, far) {
+  render(scene, matrix, near, far, MVmat) {
     // keep renderer's internal near/far in sync with the camera for correct depth encoding
     this.#near = near;
     this.#far = far;
     const nodes = scene.getRenderableNodes();
     for (const node of nodes) {
-      this.#renderNode(node, matrix);
+      this.#renderNode(node, matrix, MVmat);
     }
   }
 
-  #renderNode(object, matrix) {
+  #renderNode(object, matrix, MVmat) {
     const gl = this.#gl;
     const vertices = object.getVertices();
     const drawMode = object.getDrawMode(gl);
@@ -68,7 +68,17 @@ export class Renderer {
     let entry = this.#bufferCache.get(object);
     const needsRebuild = !entry || entry.verticesRef !== vertices || entry.drawMode !== drawMode || entry.hasTexture !== hasTexture;
 
-    gl.enable(gl.CULL_FACE);
+    const isPrimitiveLineOrPoint = drawMode === gl.POINTS || drawMode === gl.LINES || drawMode === gl.LINE_STRIP || drawMode === gl.LINE_LOOP;
+    if (isPrimitiveLineOrPoint) {
+      gl.disable(gl.CULL_FACE);
+      if (drawMode !== gl.POINTS) {
+        gl.lineWidth(2);
+      }
+    } else {
+      gl.enable(gl.CULL_FACE);
+    }
+
+    gl.disable(gl.BLEND);
 
     if (needsRebuild) {
       if (entry) {
@@ -89,6 +99,7 @@ export class Renderer {
     // the GPU already remembers that setup from when the VAO was recorded
     gl.bindVertexArray(entry.vao);
 
+    gl.uniformMatrix4fv(this.#shader.getModelViewMatrixLoc(), false, MVmat);
     gl.uniformMatrix4fv(this.#shader.getMatrixLoc(), false, matrix);
     gl.uniform3fv(this.#shader.getLightDirectionLoc(), this.#lightDirection);
     gl.uniform1f(this.#shader.getAmbientStrengthLoc(), AMBIENT_STRENGTH);
@@ -128,7 +139,6 @@ export class Renderer {
 
     const positionData = new Float32Array(vertices.flatMap((v) => v.getPosition().toArray()));
     //const colorData = new Float32Array(vertices.flatMap((v) => v.getColor().toArray()));
-    console.log(vertices[0].getColor().constructor.name);
     const colorBytes = vertices.flatMap((v) => v.getColor().toBytes());
     const colorData = new Uint8Array(colorBytes);
     const texCoordData = new Float32Array(vertices.flatMap((v) => v.getTexCoord().toArray()));

@@ -114,7 +114,7 @@ export class MireiaMat4 {
 
   // Inverts this matrix using the standard cofactor/adjugate method
   static invertArray(m) {
-    const inv = new Float32Array(16);
+    const inv = [];
 
     inv[0] = m[5]*m[10]*m[15] - m[5]*m[11]*m[14] - m[9]*m[6]*m[15] + m[9]*m[7]*m[14] + m[13]*m[6]*m[11] - m[13]*m[7]*m[10];
     inv[4] = -m[4]*m[10]*m[15] + m[4]*m[11]*m[14] + m[8]*m[6]*m[15] - m[8]*m[7]*m[14] - m[12]*m[6]*m[11] + m[12]*m[7]*m[10];

@@ -40,10 +40,10 @@ export const SCREEN_FRAGMENT_SHADER_SOURCE = `#version 300 es
       float normalDiff = 1.0 - dot(centerNormal, neighborNormal);
       float depthDiff = abs(centerDepth - neighborDepth);
 
-      if (normalDiff > NORMAL_THRESHOLD || depthDiff > DEPTH_THRESHOLD) {
+      //if (normalDiff > NORMAL_THRESHOLD || depthDiff > DEPTH_THRESHOLD) {
       //if (normalDiff > NORMAL_THRESHOLD ) {
-        isEdge = true;
-      }
+      //  isEdge = true;
+      //}
     }
 
     outColor = isEdge ? vec4(0.0, 0.0, 0.0, 1.0) : texture(u_texture, v_texCoord);
